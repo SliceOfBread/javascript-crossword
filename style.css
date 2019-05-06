@@ -88,7 +88,7 @@
 }
 
 .controls {
-  margin: 10px 0;
+  margin: 5px;
 }
 
 /* CSSButtonGenerator.com */
@@ -104,7 +104,6 @@
 	-webkit-border-radius:6px;
 	border-radius:6px;
 	border:1px solid #dcdcdc;
-	display:inline-block;
 	color:#777777;
 	font-family:arial;
 	font-size:12px;

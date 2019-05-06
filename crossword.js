@@ -53,6 +53,10 @@ function Crossw1rd(container_id) {
 			if (self.autosave) {
 				setInterval(self.save, 1000);
 			}
+		      var cell = self.grid.find('.active');
+		      var curWordNum = self.wordNumber(cell);
+		      var nextWord = self.nextWord(curWordNum);
+		      self.activateCell(nextWord);
     });
   }
 
@@ -165,17 +169,157 @@ function Crossw1rd(container_id) {
     self.container.find('.active_clue').removeClass('active_clue');
     li.addClass('active_clue');
     var paddingMarginOffset = 8;
+    self.container.find('.clues ' + 
+          (self.direction=='A'?'.across':'.down')
+        ).scrollTop(0);
     var top = li.position().top - li.parent().position().top - paddingMarginOffset;
     self.container.find('.clues ' + 
           (self.direction=='A'?'.across':'.down')
         ).scrollTop(top);
+    self.container.find('.currclue').text(li.text());
   }
 
   // draw controls
   this.drawControls = function() {
-    var div = $('<div class="controls"></div>').appendTo(this.container);
-    var reset = $('<button>Reset</button>').appendTo(div);;
+    this.controls = $('<div id="cbut" class="controls"></div>').appendTo(this.container);
+    var reset = $('<button id="rst">Reset</button>').appendTo(this.controls);
     reset.click(this.reset);
+
+    var chkL = $('<button>Check Letter</button>').appendTo(this.controls);
+    chkL.click(this.checkCurrCell);
+
+    var chkW = $('<button>Check Word</button>').appendTo(this.controls);
+    chkW.click(this.checkCurrWord);
+
+    var chkP = $('<button>Check Puzzle</button>').appendTo(this.controls);
+    chkP.click(this.checkCurrPuzzle);
+
+    // draw current clue
+    this.cluediv = $('<div class="currclue" style="padding:3px"> </div>').appendTo(this.container);
+
+    // draw keyboard (as part of controls)
+    var kbtmp;
+    this.kbdiv1 = $('<div class="keyb"></div>').appendTo(this.container);
+    kbtmp = $('<button class="kbut">Q</button>').appendTo(this.kbdiv1);
+    kbtmp = $('<button class="kbut">W</button>').appendTo(this.kbdiv1);
+    kbtmp = $('<button class="kbut">E</button>').appendTo(this.kbdiv1);
+    kbtmp = $('<button class="kbut">R</button>').appendTo(this.kbdiv1);
+    kbtmp = $('<button class="kbut">T</button>').appendTo(this.kbdiv1);
+    kbtmp = $('<button class="kbut">Y</button>').appendTo(this.kbdiv1);
+    kbtmp = $('<button class="kbut">U</button>').appendTo(this.kbdiv1);
+    kbtmp = $('<button class="kbut">I</button>').appendTo(this.kbdiv1);
+    kbtmp = $('<button class="kbut">O</button>').appendTo(this.kbdiv1);
+    kbtmp = $('<button class="kbut">P</button>').appendTo(this.kbdiv1);
+    kbtmp = $('<button class="kdel">&#8653;</button>').appendTo(this.kbdiv1);
+
+    this.kbdiv2 = $('<div class="keyb"></div>').appendTo(this.container);
+    kbtmp = $('<button class="kleft">&#8592;</button>').appendTo(this.kbdiv2);
+    kbtmp = $('<button class="kbut">A</button>').appendTo(this.kbdiv2);
+    kbtmp = $('<button class="kbut">S</button>').appendTo(this.kbdiv2);
+    kbtmp = $('<button class="kbut">D</button>').appendTo(this.kbdiv2);
+    kbtmp = $('<button class="kbut">F</button>').appendTo(this.kbdiv2);
+    kbtmp = $('<button class="kbut">G</button>').appendTo(this.kbdiv2);
+    kbtmp = $('<button class="kbut">H</button>').appendTo(this.kbdiv2);
+    kbtmp = $('<button class="kbut">J</button>').appendTo(this.kbdiv2);
+    kbtmp = $('<button class="kbut">K</button>').appendTo(this.kbdiv2);
+    kbtmp = $('<button class="kbut">L</button>').appendTo(this.kbdiv2);
+    kbtmp = $('<button class="kright">&#8594;</button>').appendTo(this.kbdiv2);
+
+    this.kbdiv3 = $('<div class="keyb"></div>').appendTo(this.container);
+    kbtmp = $('<button class="katab">&#8676;</button>').appendTo(this.kbdiv3);
+    kbtmp = $('<button class="kbut">Z</button>').appendTo(this.kbdiv3);
+    kbtmp = $('<button class="kbut">X</button>').appendTo(this.kbdiv3);
+    kbtmp = $('<button class="kbut">C</button>').appendTo(this.kbdiv3);
+    kbtmp = $('<button class="kbut">V</button>').appendTo(this.kbdiv3);
+    kbtmp = $('<button class="kbut">B</button>').appendTo(this.kbdiv3);
+    kbtmp = $('<button class="kbut">N</button>').appendTo(this.kbdiv3);
+    kbtmp = $('<button class="kbut">M</button>').appendTo(this.kbdiv3);
+    kbtmp = $('<button class="kswap">&#8675;&#8674;</button>').appendTo(this.kbdiv3);
+    kbtmp = $('<button class="ktab">&#8677;</button>').appendTo(this.kbdiv3);
+
+    $(".kbut").width("25px") ;
+    $(".kdel").width("20px") ;
+    $(".kleft").width("18px") ;
+    $(".kright").width("18px") ;
+    $(".katab").width("30px") ;
+    $(".kswap").width("30px") ;
+    $(".ktab").width("30px") ;
+    
+    $(".kbut").height("30px") ;
+    $(".kdel").height("30px") ;
+    $(".kleft").height("30px") ;
+    $(".kright").height("30px") ;
+    $(".katab").height("30px") ;
+    $(".kswap").height("30px") ;
+    $(".ktab").height("30px") ;
+    
+    $(".kbut").click(function(ev) {
+	self.kbutClick(this);
+    });
+
+    $(".kdel").click(function() {
+      var c = self.grid.find(".active");
+      if (c.length==0) return;
+      c.find('.letter').text('');
+      self.saved = false;
+      c.removeClass('incorrect');
+      c.removeClass('correct');
+      if (self.direction == 'A') {
+	    c = self.cellLeft(c);
+      } else {
+	    c = self.cellAbove(c);
+      }
+
+      if (c.length>0) c.click();
+    });
+
+    $(".kleft").click(function() {
+      var c = self.grid.find(".active");
+      if (c.length==0) return;
+      if (self.direction == 'A') {
+	    c = self.cellLeft(c);
+      } else {
+	    c = self.cellAbove(c);
+      }
+      if (c.length>0) c.click();
+    });
+
+    $(".kright").click(function() {
+      var c = self.grid.find(".active");
+      if (c.length==0) return;
+      if (self.direction == 'A') {
+	    c = self.cellRight(c);
+      } else {
+	    c = self.cellBelow(c);
+      }
+      if (c.length>0) c.click();
+    });
+
+    $(".katab").click(function() {
+      var cell = self.grid.find('.active');
+      var curWordNum = self.wordNumber(cell);
+      var prevWord = self.prevWord(curWordNum);
+      self.activateCell(prevWord);
+      return false;
+    });
+
+    $(".kswap").click(function() {
+      self.direction = self.direction=='A'?'D':'A';
+      var active = self.grid.find('.active');
+      if (active.length>0) self.activateCell(active[0]);
+    });
+
+    $(".ktab").click(function() {
+      var cell = self.grid.find('.active');
+      var curWordNum = self.wordNumber(cell);
+      var nextWord = self.nextWord(curWordNum);
+      self.activateCell(nextWord);
+      return false;
+    });
+
+
+
+
   }
 
   // set container dimensions based on grid size
@@ -184,7 +328,7 @@ function Crossw1rd(container_id) {
     var padding = 20;
     var h = this.grid.height(); 
     var w = this.grid.width();
-    var ctrlH = this.container.find('.controls').height();
+    var ctrlH = $("#cbut").height() / 4;
     this.container.width(h+padding+clueW);
     this.container.height(h+6+ctrlH);
     this.container.find('.clues').width(clueW);
@@ -328,6 +472,23 @@ function Crossw1rd(container_id) {
     }
   }
 
+    this.kbutClick = function(x) {
+	var c = x.innerText;
+	var active = self.grid.find('.active');
+	active.children('.letter').text(c);
+	self.saved = false;
+	self.checkDone();
+	// move to the next cell
+	var next;
+	if (self.direction=='A') {
+	next = self.cellRight(active,true);
+	} else {
+	next = self.cellBelow(active,true);
+	}
+	if (next.length>0) next.click();
+	return false;
+  }
+
   // key bindings
   this.mapKeyBindings = function() {
     // the current Crossw1rd instance
@@ -349,6 +510,7 @@ function Crossw1rd(container_id) {
           var active = self.grid.find('.active');
           active.children('.letter').text(c);
           self.saved = false;
+          self.checkDone();
           // move to the next cell
           var next;
           if (self.direction=='A') {
@@ -361,6 +523,8 @@ function Crossw1rd(container_id) {
         });
       }
     }
+
+
 
     // arrow keys - left
     $(document).bind('keydown', 'left', function() {
@@ -409,7 +573,11 @@ function Crossw1rd(container_id) {
       self.saved = false;
       c.removeClass('incorrect');
       c.removeClass('correct');
-      c = self.cellLeft(c);
+      if (self.direction == 'A') {
+	    c = self.cellLeft(c);
+      } else {
+	    c = self.cellAbove(c);
+      }
       if (c.length>0) c.click();
     });
     // delete - clear current cell
@@ -459,6 +627,19 @@ function Crossw1rd(container_id) {
   
   /*** ANSWER CHECKING ***/
 
+  this.checkCurrCell = function() {
+      var cell = self.grid.find('.active');
+      self.checkCell(cell);
+  }
+
+  this.checkCurrWord = function() {
+      self.checkWord();
+  }
+
+  this.checkCurrPuzzle = function() {
+      self.checkPuzzle();
+  }
+
   // check the correctness of the active cell
   this.checkCell = function(cell) {
     if (typeof cell == 'undefined') cell = this.grid.find('.active');
@@ -501,6 +682,23 @@ function Crossw1rd(container_id) {
         this.checkCell(row[x]);
       }
     }
+  }
+  
+  // check if puzzle is done (and correct)
+  this.checkDone = function() {
+    for (var y=0; y<this.cells.length; y++) {
+      var row = this.cells[y];
+      for (var x=0; x<row.length; x++) {
+        var cell = row[x];
+        if (typeof cell == 'undefined') continue;
+        var entered = cell.find('.letter').text();
+        var correctVal = cell.data('a');
+        if (typeof correctVal == 'undefined') continue;
+	if ((entered=='') && (correctVal==' ')) continue ;
+        if (correctVal != entered) return;
+      }
+    }
+    confirm('Congratulations! Puzzle complete!');
   }
 
   /*** SAVE AND RESTORE PUZZLE STATE ***/
